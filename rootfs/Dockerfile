@@ -24,5 +24,6 @@ RUN wget -O/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0
 COPY haproxy-ingress-controller /
 COPY haproxy-wrapper /
 COPY haproxy.tmpl /usr/local/etc/haproxy/
+COPY 503.http /usr/local/etc/haproxy/errors/503custom.http
 
 ENTRYPOINT ["/dumb-init", "--", "/haproxy-ingress-controller"]

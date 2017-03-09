@@ -26,6 +26,7 @@ defaults
     timeout server          50s
     timeout tunnel          1h
     timeout http-keep-alive 60s
+    errorfile 503 /usr/local/etc/haproxy/errors/503custom.http
 
 {{ if ne (len $cfg.Userlists) 0 }}
 ######
