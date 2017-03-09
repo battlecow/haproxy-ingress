@@ -21,6 +21,7 @@ import (
 	"github.com/golang/glog"
 	"os/exec"
 	gotemplate "text/template"
+	"k8s.io/ingress/core/pkg/ingress"
 )
 
 type template struct {
@@ -29,8 +30,37 @@ type template struct {
 	fmtConfig *bytes.Buffer
 }
 
+var (
+	funcMap = gotemplate.FuncMap{
+		"empty": func(input interface{}) bool {
+			check, ok := input.(string)
+			if ok {
+				return len(check) == 0
+			}
+			return true
+		},
+		"isSSLPassthrough": isSSLPassthrough,
+	}
+)
+
+func isSSLPassthrough(b interface{}, sslb interface{}) bool {
+	match := b.(string)
+	sslBackends := sslb.([]*ingress.SSLPassthroughBackend)
+	if (len(sslBackends) == 0) {
+		return false
+	}
+
+	for _, passthrough := range sslBackends {
+		if (passthrough.Backend == match) {
+			glog.Infof("Found ssl passthrough backend: %s", passthrough)
+			return true
+		}
+	}
+	return false
+}
+
 func newTemplate(name string, file string) *template {
-	tmpl, err := gotemplate.New(name).ParseFiles(file)
+	tmpl, err := gotemplate.New(name).Funcs(funcMap).ParseFiles(file)
 	if err != nil {
 		glog.Fatalf("Cannot read template file: %v", err)
 	}

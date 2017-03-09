@@ -46,10 +46,17 @@ userlist {{ $userlist.ListName }}
 {{ range $backend := $cfg.Backends }}
 backend {{ $backend.Name }}
     mode http
+{{ if isSSLPassthrough $backend.Name $cfg.PassthroughBackends }}
+{{ range $endpoint := $backend.Endpoints }}
+{{ $target := (print $endpoint.Address ":" $endpoint.Port) }}
+    server {{ $target }} {{ $target }} ssl verify none
+{{ end }}
+{{ else }}
     balance roundrobin
 {{ range $endpoint := $backend.Endpoints }}
 {{ $target := (print $endpoint.Address ":" $endpoint.Port) }}
     server {{ $target }} {{ $target }} check port {{ $endpoint.Port }} inter 2s
+{{ end }}
 {{ end }}
 {{ end }}
 
@@ -120,10 +127,10 @@ frontend httpsfront-{{ $host }}
     # CRT PEM checksum: {{ $server.SSLPemChecksum }}
     bind unix@/var/run/haproxy-host-{{ $host }}.sock ssl crt {{ $server.SSLCertificate }} no-sslv3 accept-proxy
     mode http
+    option forwardfor
 {{ if ne $cfg.Syslog "" }}
     option httplog
 {{ end }}
-    option forwardfor
     rspadd Strict-Transport-Security:\ max-age=15768000
 {{ range $location := $server.Locations }}
 {{ if ne $location.HAWhitelist "" }}
